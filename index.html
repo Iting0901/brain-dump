@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<!-- saved from url=(0048)file:///Users/i-ting/Downloads/brain-dump_4.html -->
+<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>腦袋清空器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #eeede9;
+    --border: #e0ddd6;
+    --text: #1a1a18;
+    --muted: #999890;
+    --accent: #3a7d44;
+    --todo: #2176ae;
+    --waiting: #c47a1e;
+    --later: #7b4fa6;
+    --done: #bbbbbb;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+  }
+
+  .header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .stats { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+  .stat-badge { display: flex; align-items: center; gap: 5px; }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .input-zone {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .input-row { display: flex; gap: 8px; align-items: stretch; }
+
+  .main-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 16px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .main-input:focus { border-color: var(--accent); }
+  .main-input::placeholder { color: var(--muted); }
+
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 20px;
+    font-size: 20px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .add-btn:hover { opacity: 0.85; }
+  .add-btn:active { transform: scale(0.96); }
+
+  .type-selector { display: flex; gap: 7px; margin-top: 10px; }
+
+  .type-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+
+  .type-btn.active[data-type="todo"]    { border-color: var(--todo);    color: var(--todo);    background: rgba(33,118,174,0.07); }
+  .type-btn.active[data-type="waiting"] { border-color: var(--waiting); color: var(--waiting); background: rgba(196,122,30,0.07); }
+  .type-btn.active[data-type="later"]   { border-color: var(--later);   color: var(--later);   background: rgba(123,79,166,0.07); }
+
+  .waiting-extra {
+    display: none;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .waiting-extra.show { display: flex; }
+
+  .waiting-who-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--waiting);
+    border-radius: 6px;
+    padding: 9px 13px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+  }
+
+  .waiting-who-input::placeholder { color: var(--muted); }
+
+  .deadline-label {
+    font-size: 11px;
+    color: var(--waiting);
+    white-space: nowrap;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .deadline-input {
+    background: var(--surface);
+    border: 1px solid var(--waiting);
+    border-radius: 6px;
+    padding: 9px 11px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    width: 140px;
+    cursor: pointer;
+  }
+
+  .priority-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .priority-row.show { display: flex; }
+
+  .priority-btns { display: flex; gap: 6px; }
+
+  .pri-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .pri-btn.active[data-pri="urgent"] { border-color: #c0392b; color: #c0392b; background: rgba(192,57,43,0.08); }
+  .pri-btn.active[data-pri="high"]   { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.08); }
+  .pri-btn.active[data-pri="mid"]    { border-color: #e67e22; color: #e67e22; background: rgba(230,126,34,0.08); }
+  .pri-btn.active[data-pri="low"]    { border-color: #27ae60; color: #27ae60; background: rgba(39,174,96,0.08); }
+
+  .pri-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .pri-urgent { background: rgba(192,57,43,0.1); color: #c0392b; }
+  .pri-high   { background: rgba(231,76,60,0.1); color: #e74c3c; }
+  .pri-mid    { background: rgba(230,126,34,0.1); color: #e67e22; }
+  .pri-low    { background: rgba(39,174,96,0.1); color: #27ae60; }
+
+  .task-card.urgent-card { border-color: #f5a9a9; background: #fffafa; }
+
+  .tabs {
+    display: flex;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 13px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .tab-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+
+  .overdue-banner {
+    margin: 12px 28px 0;
+    background: #fef3f2;
+    border: 1px solid #fad2ce;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #c0392b;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .overdue-banner.show { display: flex; }
+
+  .task-list {
+    padding: 14px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 180px;
+  }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-icon { font-size: 34px; margin-bottom: 10px; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    transition: all 0.2s;
+    animation: slideIn 0.2s ease;
+    position: relative;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-card:hover { border-color: #c8c5be; }
+  .task-card.done { opacity: 0.4; }
+  .task-card.overdue-card { border-color: #f5c6c6; background: #fffafa; }
+
+  .task-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 10px 0 0 10px;
+  }
+
+  .task-card[data-type="todo"]::before    { background: var(--todo); }
+  .task-card[data-type="waiting"]::before { background: var(--waiting); }
+  .task-card[data-type="later"]::before   { background: var(--later); }
+  .task-card.done::before                 { background: var(--done); }
+
+  .task-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: #fff;
+  }
+
+  .task-card[data-type="todo"]    .task-check:hover { border-color: var(--todo); }
+  .task-card[data-type="waiting"] .task-check:hover { border-color: var(--waiting); }
+  .task-card[data-type="later"]   .task-check:hover { border-color: var(--later); }
+  .task-card.done .task-check { background: var(--done); border-color: var(--done); }
+
+  .task-body { flex: 1; min-width: 0; }
+
+  .task-text { font-size: 14px; line-height: 1.5; color: var(--text); }
+  .task-card.done .task-text { text-decoration: line-through; color: var(--muted); }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .task-type-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  [data-type="todo"]    .task-type-badge { color: var(--todo);    background: rgba(33,118,174,0.1); }
+  [data-type="waiting"] .task-type-badge { color: var(--waiting); background: rgba(196,122,30,0.1); }
+  [data-type="later"]   .task-type-badge { color: var(--later);   background: rgba(123,79,166,0.1); }
+  .done .task-type-badge { color: var(--muted); background: var(--surface2); }
+
+  .waiting-who-tag { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
+
+  .dl-badge {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 3px;
+  }
+
+  .dl-overdue { background: #fde8e8; color: #c0392b; }
+  .dl-today   { background: #fff3cd; color: #9a6800; }
+  .dl-soon    { background: #fff8e1; color: var(--waiting); }
+  .dl-ok      { background: #e8f5e9; color: #2e7d32; }
+
+  .task-time { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; margin-left: auto; }
+
+  .task-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 17px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .task-card:hover .task-delete { opacity: 1; }
+  .task-delete:hover { color: #e74c3c; }
+
+  .ritual-section {
+    margin: 4px 28px 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .ritual-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .ritual-title { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 7px; }
+  .ritual-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .ritual-toggle { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  .ritual-body { padding: 18px 20px; display: none; }
+  .ritual-body.open { display: block; }
+
+  .ritual-steps { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+  .ritual-step { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); }
+  .ritual-step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+
+  .ritual-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: opacity 0.15s;
+  }
+
+  .ritual-btn:hover { opacity: 0.85; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 26px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .modal-progress { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; font-family: 'Space Mono', monospace; }
+
+  .ritual-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+
+  .ritual-item-text { font-size: 14px; margin-bottom: 8px; line-height: 1.5; }
+  .ritual-item-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .ritual-actions { display: flex; gap: 6px; }
+
+  .ritual-action-btn {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+
+  .ritual-action-btn:hover[data-action="todo"]    { border-color: var(--todo);    color: var(--todo);    background: rgba(33,118,174,0.07); }
+  .ritual-action-btn:hover[data-action="waiting"] { border-color: var(--waiting); color: var(--waiting); background: rgba(196,122,30,0.07); }
+  .ritual-action-btn:hover[data-action="later"]   { border-color: var(--later);   color: var(--later);   background: rgba(123,79,166,0.07); }
+  .ritual-action-btn:hover[data-action="delete"]  { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.07); }
+
+  .ritual-action-btn.selected[data-action="todo"]    { border-color: var(--todo);    color: var(--todo);    background: rgba(33,118,174,0.12); }
+  .ritual-action-btn.selected[data-action="waiting"] { border-color: var(--waiting); color: var(--waiting); background: rgba(196,122,30,0.12); }
+  .ritual-action-btn.selected[data-action="later"]   { border-color: var(--later);   color: var(--later);   background: rgba(123,79,166,0.12); }
+  .ritual-action-btn.selected[data-action="delete"]  { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.12); }
+
+  .modal-done-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: opacity 0.15s;
+  }
+
+  .modal-done-btn:hover { opacity: 0.85; }
+  .modal-done-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .ritual-complete { text-align: center; padding: 16px 0; }
+  .ritual-complete-icon { font-size: 46px; margin-bottom: 10px; }
+  .ritual-complete-title { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .ritual-complete-sub { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  /* AFTER HOURS BAR */
+  .afterhours-bar {
+    background: #f0f7ff;
+    border-bottom: 1px solid #cce0f5;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    color: #2176ae;
+  }
+
+  .afterhours-btn {
+    background: #2176ae;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .afterhours-btn:hover { opacity: 0.85; }
+
+  /* QUICK INBOX */
+  .inbox-banner {
+    background: #fffbf0;
+    border-bottom: 1px solid #f0e0b0;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .inbox-banner-left { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .inbox-count-badge {
+    background: #e67e22;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .inbox-quick-btn {
+    background: #e67e22;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .inbox-quick-btn:hover { opacity: 0.85; }
+
+  /* QUICK INBOX MODAL */
+  .inbox-modal-hint {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #7a5800;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  .inbox-modal-hint strong { display: block; margin-bottom: 4px; font-size: 14px; }
+
+  .inbox-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+  .inbox-text-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .inbox-text-input:focus { border-color: #e67e22; }
+  .inbox-text-input::placeholder { color: var(--muted); }
+
+  .inbox-save-btn {
+    background: #e67e22;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .inbox-save-btn:hover { opacity: 0.85; }
+
+  .inbox-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 280px; overflow-y: auto; }
+
+  .inbox-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .inbox-item-text { flex: 1; line-height: 1.5; }
+  .inbox-item-time { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; }
+
+  .inbox-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+  .inbox-action {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .inbox-action:hover[data-act="todo"]    { border-color: var(--todo);    color: var(--todo); }
+  .inbox-action:hover[data-act="waiting"] { border-color: var(--waiting); color: var(--waiting); }
+  .inbox-action:hover[data-act="later"]   { border-color: var(--later);   color: var(--later); }
+  .inbox-action:hover[data-act="delete"]  { border-color: #e74c3c; color: #e74c3c; }
+
+  .inbox-add-section { margin-bottom: 4px; }
+
+  .inbox-type-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .inbox-type-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.15s;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .inbox-type-btn.active[data-itype="todo"]    { border-color: var(--todo);    color: var(--todo);    background: rgba(33,118,174,0.08); }
+  .inbox-type-btn.active[data-itype="waiting"] { border-color: var(--waiting); color: var(--waiting); background: rgba(196,122,30,0.08); }
+  .inbox-type-btn.active[data-itype="later"]   { border-color: var(--later);   color: var(--later);   background: rgba(123,79,166,0.08); }
+
+  .inbox-type-save {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border-color: var(--accent) !important;
+    font-weight: 700;
+  }
+
+  .inbox-empty { text-align: center; padding: 24px; color: var(--muted); font-size: 13px; }
+
+  /* TASK EXPAND EDIT */
+  .task-card.expanded { border-color: #c8c5be; }
+
+  .task-expand {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-expand-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .expand-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+    width: 42px;
+    flex-shrink: 0;
+  }
+
+  .expand-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .expand-input:focus { border-color: var(--accent); }
+  .expand-input::placeholder { color: var(--muted); }
+
+  .expand-save-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .expand-save-btn:hover { opacity: 0.85; }
+
+  .task-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .task-card-clickable { cursor: pointer; }
+
+  @media (max-width: 480px) {
+    .inbox-banner { padding: 10px 16px; }
+    .header, .input-zone, .task-list { padding-left: 16px; padding-right: 16px; }
+    .tabs { padding: 0 16px; }
+    .ritual-section { margin-left: 16px; margin-right: 16px; }
+    .overdue-banner { margin-left: 16px; margin-right: 16px; }
+    .deadline-input { width: 120px; }
+    .deadline-label { display: none; }
+    .stats { gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">腦袋清空器</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="stats" id="stats">
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--todo)"></div>0 要做</div>
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--waiting)"></div>0 等回</div>
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--later)"></div>0 之後</div>
+  </div>
+    <button id="clearAllBtn" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;font-family:&#39;Space Mono&#39;,monospace;">清空</button>
+  </div>
+</div>
+
+<div class="afterhours-bar" id="afterhoursBar">
+  <span>📵 下班後收到訊息？</span>
+  <button class="afterhours-btn" id="afterhoursBtn">丟進「上班再說」，明天再處理 →</button>
+</div>
+
+<div class="input-zone">
+  <div class="input-hint">// 想到什麼就丟進來，按 Enter 儲存</div>
+  <div class="input-row">
+    <input class="main-input" id="mainInput" type="text" placeholder="輸入任何事情…" autocomplete="off">
+    <button class="add-btn" id="addBtn">+</button>
+  </div>
+  <div class="type-selector">
+    <button class="type-btn active" data-type="todo">🎯 我要做</button>
+    <button class="type-btn" data-type="waiting">⏳ 等回覆</button>
+    <button class="type-btn" data-type="later">💤 之後再說</button>
+  </div>
+  <div class="waiting-extra" id="waitingExtra">
+    <input class="waiting-who-input" id="waitingWhoInput" type="text" placeholder="等誰？（選填）">
+    <span class="deadline-label">追蹤期限</span>
+    <input class="deadline-input" id="deadlineInput" type="date">
+  </div>
+  <div class="waiting-extra show" id="todoExtra">
+    <span class="deadline-label" style="color:var(--todo)">截止日期</span>
+    <input class="deadline-input" id="todoDeadlineInput" type="date" style="border-color:var(--todo)">
+  </div>
+  <div class="priority-row show" id="priorityRow">
+    <span class="deadline-label" style="color:var(--muted)">優先度</span>
+    <div class="priority-btns">
+      <button class="pri-btn" data-pri="urgent">🚨 緊急</button>
+      <button class="pri-btn active" data-pri="high">🔴 高</button>
+      <button class="pri-btn" data-pri="mid">🟡 中</button>
+      <button class="pri-btn" data-pri="low">🟢 低</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="all">全部 <span class="tab-count" id="count-all">0</span></div>
+  <div class="tab" data-tab="todo">我要做 <span class="tab-count" id="count-todo">0</span></div>
+  <div class="tab" data-tab="waiting">等回覆 <span class="tab-count" id="count-waiting">0</span></div>
+  <div class="tab" data-tab="later">之後 <span class="tab-count" id="count-later">0</span></div>
+  <div class="tab" data-tab="done">完成 <span class="tab-count" id="count-done">0</span></div>
+  <div class="tab" data-tab="inbox">📋 上班再說 <span class="tab-count" id="count-inbox">0</span></div>
+</div>
+
+<div class="overdue-banner" id="overdueBanner">
+  <span>🔔</span><span id="overdueText"></span>
+</div>
+
+<div class="inbox-banner" id="inboxBanner" style="display:none">
+  <div class="inbox-banner-left">
+    <span>📥</span>
+    <span>上班再說有 <span class="inbox-count-badge" id="inboxCountBadge">0</span> 件待整理</span>
+  </div>
+  <button class="inbox-quick-btn" id="openInboxBtn">開始整理 →</button>
+</div>
+
+<div class="task-list" id="taskList"><div class="empty-state"><div class="empty-icon">🧠</div><div class="empty-text">腦袋清空了！<br>有什麼就丟進來</div></div></div>
+
+<div class="ritual-section">
+  <div class="ritual-header" id="ritualHeader">
+    <div>
+      <div class="ritual-title">🌙 下班清空儀式</div>
+      <div class="ritual-sub">把今天的腦袋清空，安心下班</div>
+    </div>
+    <div class="ritual-toggle" id="ritualToggle">展開</div>
+  </div>
+  <div class="ritual-body" id="ritualBody">
+    <div class="ritual-steps">
+      <div class="ritual-step"><div class="ritual-step-num">1</div>把腦子裡還沒記的事先丟進來</div>
+      <div class="ritual-step"><div class="ritual-step-num">2</div>點「開始清空」，每件事決定一個歸宿</div>
+      <div class="ritual-step"><div class="ritual-step-num">3</div>全部決定完 → 關電腦，放假</div>
+    </div>
+    <button class="ritual-btn" id="startRitualBtn">開始下班清空儀式 →</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal"><div id="modalContent"></div></div>
+</div>
+
+<script src="./index_files/firebase-app-compat.js"></script>
+<script src="./index_files/firebase-firestore-compat.js"></script>
+<script>
+const STORAGE_KEY = 'brain_dump_tasks_v2';
+let tasks = [];
+let currentTab = 'all';
+let selectedType = 'todo';
+let ritualDecisions = {};
+let selectedPriority = 'high';
+let expandedId = null;
+
+function toggleExpand(id) {
+  expandedId = (expandedId === id) ? null : id;
+  render();
+}
+
+function saveExpand(id) {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  const noteEl = document.getElementById('note-' + id);
+  const whoEl  = document.getElementById('who-'  + id);
+  if (noteEl) t.note = noteEl.value.trim();
+  if (whoEl)  t.waitingWho = whoEl.value.trim();
+  expandedId = null;
+  save(); render();
+}
+
+// Firebase will handle persistence
+function load() { /* handled by Firebase listener */ }
+function save() {
+  try {
+    if (window.dbReady && window.firestoreDoc) {
+      window.firestoreDoc.set({ tasks: tasks });
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+  } catch(e) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function formatTime(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return '剛剛';
+  if (d < 3600000) return Math.floor(d/60000) + '分前';
+  if (d < 86400000) return Math.floor(d/3600000) + '小時前';
+  return Math.floor(d/86400000) + '天前';
+}
+
+function deadlineInfo(dl) {
+  if (!dl) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d = new Date(dl + 'T00:00:00');
+  const days = Math.round((d - now) / 86400000);
+  if (days < 0)   return { label: `逾期 ${-days} 天`, cls: 'dl-overdue', daysLeft: days };
+  if (days === 0) return { label: '今天到期', cls: 'dl-today', daysLeft: 0 };
+  if (days <= 2)  return { label: `還有 ${days} 天`, cls: 'dl-soon', daysLeft: days };
+  return { label: `${dl.slice(5).replace('-','/')} 前`, cls: 'dl-ok', daysLeft: days };
+}
+
+function addTask() {
+  const text = document.getElementById('mainInput').value.trim();
+  if (!text) return;
+  const isWaiting = selectedType === 'waiting';
+  const isTodo = selectedType === 'todo';
+  tasks.unshift({
+    id: genId(), text, type: selectedType,
+    waitingWho: isWaiting ? document.getElementById('waitingWhoInput').value.trim() : '',
+    deadline:   isWaiting ? document.getElementById('deadlineInput').value
+              : isTodo    ? document.getElementById('todoDeadlineInput').value
+              : '',
+    priority: selectedPriority,
+    done: false, createdAt: Date.now()
+  });
+  save();
+  document.getElementById('mainInput').value = '';
+  document.getElementById('waitingWhoInput').value = '';
+  document.getElementById('todoDeadlineInput').value = '';
+  setDefaultDeadline();
+  render();
+  document.getElementById('mainInput').focus();
+}
+
+function toggleDone(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save(); render();
+}
+
+function getFiltered() {
+  if (currentTab === 'all')   return tasks.filter(t => !t.done && t.type !== 'inbox');
+  if (currentTab === 'done')  return tasks.filter(t => t.done);
+  if (currentTab === 'inbox') return tasks.filter(t => t.type === 'inbox');
+  return tasks.filter(t => t.type === currentTab && !t.done);
+}
+
+function render() {
+  const active = tasks.filter(t => !t.done);
+  const inboxItems = tasks.filter(t => t.type === 'inbox');
+  document.getElementById('count-all').textContent     = active.filter(t=>t.type!=='inbox').length;
+  document.getElementById('count-todo').textContent    = active.filter(t=>t.type==='todo').length;
+  document.getElementById('count-waiting').textContent = active.filter(t=>t.type==='waiting').length;
+  document.getElementById('count-later').textContent   = active.filter(t=>t.type==='later').length;
+  document.getElementById('count-done').textContent    = tasks.filter(t=>t.done).length;
+  document.getElementById('count-inbox').textContent   = inboxItems.length;
+  const inboxBanner = document.getElementById('inboxBanner');
+  document.getElementById('inboxCountBadge').textContent = inboxItems.length;
+  inboxBanner.style.display = inboxItems.length > 0 ? 'flex' : 'none';
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--todo)"></div>${active.filter(t=>t.type==='todo').length} 要做</div>
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--waiting)"></div>${active.filter(t=>t.type==='waiting').length} 等回</div>
+    <div class="stat-badge"><div class="stat-dot" style="background:var(--later)"></div>${active.filter(t=>t.type==='later').length} 之後</div>
+  `;
+
+  const overdue = active.filter(t => t.type==='waiting' && t.deadline && deadlineInfo(t.deadline).daysLeft < 0);
+  const banner = document.getElementById('overdueBanner');
+  if (overdue.length > 0) {
+    banner.classList.add('show');
+    document.getElementById('overdueText').textContent = `有 ${overdue.length} 件等回覆已逾期，記得去追一下！`;
+  } else {
+    banner.classList.remove('show');
+  }
+
+  const list = document.getElementById('taskList');
+  const filtered = getFiltered();
+
+  if (filtered.length === 0) {
+    const msgs = {
+      all:     { icon: '🧠', text: '腦袋清空了！<br>有什麼就丟進來' },
+      todo:    { icon: '🎯', text: '沒有待做事項<br>好好休息吧' },
+      waiting: { icon: '⏳', text: '沒有等待中的事項' },
+      later:   { icon: '💤', text: '沒有延後的事項' },
+      done:    { icon: '✅', text: '還沒完成任何事項' },
+      inbox:   { icon: '📥', text: '沒有待整理的事<br>下班可以安心放假了' },
+    };
+    const em = msgs[currentTab] || msgs.all;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">${em.icon}</div><div class="empty-text">${em.text}</div></div>`;
+    return;
+  }
+
+  const typeLabel = { todo: '我要做', waiting: '等回覆', later: '之後再說', inbox: '📋 上班再說' };
+
+  const priOrder = { urgent: 0, high: 1, mid: 2, low: 3, undefined: 2 };
+  const sorted = [...filtered].sort((a, b) => {
+    const aOv = (a.deadline && deadlineInfo(a.deadline).daysLeft < 0) ? 1 : 0;
+    const bOv = (b.deadline && deadlineInfo(b.deadline).daysLeft < 0) ? 1 : 0;
+    if (aOv !== bOv) return bOv - aOv;
+    const pa = priOrder[a.priority] ?? 2;
+    const pb = priOrder[b.priority] ?? 2;
+    if (pa !== pb) return pa - pb;
+    return b.createdAt - a.createdAt;
+  });
+
+  list.innerHTML = sorted.map(t => {
+    const dlInfo = (t.deadline) ? deadlineInfo(t.deadline) : null;
+    const isOverdue = dlInfo && dlInfo.daysLeft < 0;
+    const expanded = expandedId === t.id;
+    return `
+    <div class="task-card ${t.done?'done':''} ${isOverdue?'overdue-card':''} ${t.priority==='urgent'?'urgent-card':''} ${expanded?'expanded':''}" data-type="${t.type}">
+      <div class="task-check" onclick="toggleDone('${t.id}')">${t.done?'✓':''}</div>
+      <div class="task-body task-card-clickable" onclick="toggleExpand('${t.id}')">
+        <div class="task-text">${escHtml(t.text)}</div>
+        ${t.note ? `<div class="task-note">📝 ${escHtml(t.note)}</div>` : ''}
+        <div class="task-meta">
+          <span class="task-type-badge">${typeLabel[t.type]}</span>
+          ${t.waitingWho ? `<span class="waiting-who-tag">👤 ${escHtml(t.waitingWho)}</span>` : ''}
+          ${t.priority && t.priority !== 'low' ? `<span class="pri-badge pri-${t.priority}">${{urgent:'🚨 緊急',high:'🔴 高',mid:'🟡 中'}[t.priority]||''}</span>` : ''}
+          ${dlInfo ? `<span class="dl-badge ${dlInfo.cls}">🗓 ${dlInfo.label}</span>` : ''}
+          <span class="task-time">${formatTime(t.createdAt)}</span>
+        </div>
+        ${expanded ? `
+        <div class="task-expand" onclick="event.stopPropagation()">
+          <div class="task-expand-row">
+            <span class="expand-label">備註</span>
+            <input class="expand-input" id="note-${t.id}" placeholder="補充說明…" value="${escHtml(t.note||'')}">
+          </div>
+          <div class="task-expand-row">
+            <span class="expand-label">等誰</span>
+            <input class="expand-input" id="who-${t.id}" placeholder="等誰回覆？" value="${escHtml(t.waitingWho||'')}">
+          </div>
+          <div class="task-expand-row" style="justify-content:flex-end">
+            <button class="expand-save-btn" onclick="saveExpand('${t.id}')">儲存</button>
+          </div>
+        </div>` : ''}
+      </div>
+      <button class="task-delete" onclick="deleteTask('${t.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setDefaultDeadline() {
+  const d = new Date(); d.setDate(d.getDate()+2);
+  document.getElementById('deadlineInput').value = d.toISOString().slice(0,10);
+}
+
+// Type selector
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedType = btn.dataset.type;
+    document.getElementById('waitingExtra').classList.toggle('show', selectedType === 'waiting');
+    document.getElementById('todoExtra').classList.toggle('show', selectedType === 'todo');
+  });
+});
+
+// Priority buttons
+document.querySelectorAll('.pri-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pri-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPriority = btn.dataset.pri;
+  });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    render();
+  });
+});
+
+let isComposing = false;
+document.getElementById('mainInput').addEventListener('compositionstart', () => { isComposing = true; });
+document.getElementById('mainInput').addEventListener('compositionend', () => { isComposing = false; });
+document.getElementById('mainInput').addEventListener('keydown', e => { if (e.key==='Enter' && !isComposing) addTask(); });
+document.getElementById('addBtn').addEventListener('click', addTask);
+
+document.getElementById('ritualHeader').addEventListener('click', () => {
+  const body = document.getElementById('ritualBody');
+  const toggle = document.getElementById('ritualToggle');
+  const open = body.classList.toggle('open');
+  toggle.textContent = open ? '收起' : '展開';
+});
+
+document.getElementById('startRitualBtn').addEventListener('click', () => {
+  const undecided = tasks.filter(t => !t.done);
+  if (undecided.length === 0) { showRitualComplete(); return; }
+  ritualDecisions = {};
+  showRitualModal(undecided);
+});
+
+function showRitualModal(items) {
+  document.getElementById('modalOverlay').classList.add('open');
+  const typeLabel = { todo: '我要做', waiting: '等回覆', later: '之後再說' };
+
+  function renderModal() {
+    const decided = Object.keys(ritualDecisions).length;
+    const total = items.length;
+    const allDone = decided === total;
+    const content = document.getElementById('modalContent');
+
+    content.innerHTML = `
+      <div class="modal-title">🌙 下班清空儀式</div>
+      <div class="modal-sub">每件事都給它一個去處，腦袋才能真正放鬆</div>
+      <div class="modal-progress">${decided} / ${total} 已決定</div>
+      ${items.map(t => {
+        const dlInfo = t.deadline ? deadlineInfo(t.deadline) : null;
+        return `
+        <div class="ritual-item">
+          <div class="ritual-item-text">${escHtml(t.text)}</div>
+          <div class="ritual-item-meta">
+            <span>${typeLabel[t.type]}</span>
+            ${t.waitingWho ? `<span>👤 ${escHtml(t.waitingWho)}</span>` : ''}
+            ${dlInfo ? `<span class="dl-badge ${dlInfo.cls}">🗓 ${dlInfo.label}</span>` : ''}
+          </div>
+          <div class="ritual-actions">
+            <button class="ritual-action-btn ${ritualDecisions[t.id]==='todo'?'selected':''}" data-action="todo" data-id="${t.id}">🎯 要做</button>
+            <button class="ritual-action-btn ${ritualDecisions[t.id]==='waiting'?'selected':''}" data-action="waiting" data-id="${t.id}">⏳ 等人</button>
+            <button class="ritual-action-btn ${ritualDecisions[t.id]==='later'?'selected':''}" data-action="later" data-id="${t.id}">💤 之後</button>
+            <button class="ritual-action-btn ${ritualDecisions[t.id]==='delete'?'selected':''}" data-action="delete" data-id="${t.id}">🗑 刪掉</button>
+          </div>
+        </div>`;
+      }).join('')}
+      <button class="modal-done-btn" id="ritualDoneBtn" ${allDone?'':'disabled'}>
+        ${allDone ? '✅ 完成！關電腦下班' : `還有 ${total-decided} 件未決定`}
+      </button>
+    `;
+
+    content.querySelectorAll('.ritual-action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ritualDecisions[btn.dataset.id] = btn.dataset.action;
+        renderModal();
+      });
+    });
+
+    const doneBtn = document.getElementById('ritualDoneBtn');
+    if (doneBtn && !doneBtn.disabled) doneBtn.addEventListener('click', () => applyRitualDecisions(items));
+  }
+
+  renderModal();
+}
+
+function applyRitualDecisions(items) {
+  items.forEach(item => {
+    const d = ritualDecisions[item.id];
+    if (!d) return;
+    if (d === 'delete') {
+      tasks = tasks.filter(t => t.id !== item.id);
+    } else {
+      const t = tasks.find(t => t.id === item.id);
+      if (t) t.type = d;
+    }
+  });
+  save();
+  showRitualComplete();
+}
+
+function showRitualComplete() {
+  document.getElementById('modalOverlay').classList.add('open');
+  const active = tasks.filter(t => !t.done);
+  document.getElementById('modalContent').innerHTML = `
+    <div class="ritual-complete">
+      <div class="ritual-complete-icon">🎉</div>
+      <div class="ritual-complete-title">腦袋清空完成！</div>
+      <div class="ritual-complete-sub">
+        明天上班打開這裡<br>
+        ${active.filter(t=>t.type==='todo').length} 件要做・${active.filter(t=>t.type==='waiting').length} 件等回覆・${active.filter(t=>t.type==='later').length} 件之後再說<br><br>
+        現在可以安心放假了 ☁️
+      </div>
+      <button class="modal-done-btn" onclick="closeModal()" style="margin-top:22px">好，關掉了 👋</button>
+    </div>
+  `;
+  render();
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
+
+setDefaultDeadline();
+document.getElementById('todoExtra').classList.add('show');
+document.getElementById('clearAllBtn').addEventListener('click', function() {
+  if (confirm('確定要清空所有資料？')) {
+    tasks = [];
+    expandedId = null;
+    save();
+    render();
+  }
+});
+
+// Firebase init
+window.dbReady = false;
+window.firestoreDoc = null;
+
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyD6mafhQJcCjwAVMxYv55g_X-jAwgxnEhQ",
+    authDomain: "brain-dump-b4393.firebaseapp.com",
+    projectId: "brain-dump-b4393",
+    storageBucket: "brain-dump-b4393.firebasestorage.app",
+    messagingSenderId: "492551349179",
+    appId: "1:492551349179:web:70ed0a5897a6b12a8d1a9e",
+    measurementId: "G-YKZMH7C4ZC"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const docRef = db.collection('users').doc('default');
+  window.firestoreDoc = docRef;
+  window.dbReady = true;
+
+  // Listen for real-time updates
+  docRef.onSnapshot((doc) => {
+    if (doc.exists) {
+      const data = doc.data();
+      if (data && data.tasks) {
+        tasks = data.tasks;
+        render();
+      }
+    } else {
+      // First time - save empty
+      docRef.set({ tasks: [] });
+    }
+  });
+
+} catch(e) {
+  console.log('Firebase not available, using localStorage', e);
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) tasks = JSON.parse(r); } catch(e2) {}
+  render();
+}
+
+// Quick inbox
+let isComposingInbox = false;
+document.getElementById('openInboxBtn').addEventListener('click', openInboxModal);
+document.getElementById('afterhoursBtn').addEventListener('click', openInboxModal);
+
+function openInboxModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  renderInboxModal();
+}
+
+function renderInboxModal() {
+  const inbox = tasks.filter(t => t.type === 'inbox');
+  const content = document.getElementById('modalContent');
+
+  content.innerHTML = `
+    <div class="modal-title">📋 上班再說</div>
+    <div class="inbox-modal-hint">
+      <strong>📵 真的緊急？請打電話。</strong>
+      LINE 不是緊急管道。先記下來，上班再一起整理。
+    </div>
+
+    <div class="inbox-add-section">
+      <div class="inbox-input-row">
+        <input class="inbox-text-input" id="inboxTextInput" placeholder="下班後看到的事，丟進來就好…" autocomplete="off">
+        <button class="inbox-save-btn" id="inboxSaveBtn">+</button>
+      </div>
+    </div>
+
+    ${inbox.length === 0
+      ? '<div class="inbox-empty" style="margin-top:16px">沒有待整理的事 ✨</div>'
+      : `<div style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-family:'Space Mono',monospace;">已記錄 ${inbox.length} 件</div>
+         <div class="inbox-list">${inbox.map(t => `
+        <div class="inbox-item" data-id="${t.id}">
+          <div style="flex:1">
+            <div class="inbox-item-text">${escHtml(t.text)}</div>
+            <div class="inbox-actions">
+              <button class="inbox-action" data-act="todo" data-id="${t.id}">🎯 要做</button>
+              <button class="inbox-action" data-act="waiting" data-id="${t.id}">⏳ 等回覆</button>
+              <button class="inbox-action" data-act="later" data-id="${t.id}">💤 之後</button>
+              <button class="inbox-action" data-act="delete" data-id="${t.id}">🗑 刪掉</button>
+            </div>
+          </div>
+          <div class="inbox-item-time">${formatTime(t.createdAt)}</div>
+        </div>`).join('')}</div>`
+    }
+    <button class="modal-done-btn" onclick="closeModal()" style="margin-top:16px">關閉</button>
+  `;
+
+  const inboxInput = document.getElementById('inboxTextInput');
+  function saveInbox() {
+    const text = inboxInput.value.trim();
+    if (!text) return;
+    tasks.unshift({ id: genId(), text, type: 'inbox', waitingWho: '', deadline: '', priority: 'mid', done: false, createdAt: Date.now() });
+    save(); render(); renderInboxModal();
+    setTimeout(() => { const el = document.getElementById('inboxTextInput'); if(el) el.focus(); }, 50);
+  }
+
+  let composingInbox = false;
+  inboxInput.addEventListener('compositionstart', () => { composingInbox = true; });
+  inboxInput.addEventListener('compositionend', () => { composingInbox = false; });
+  inboxInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !composingInbox) saveInbox(); });
+  document.getElementById('inboxSaveBtn').addEventListener('click', saveInbox);
+
+  content.querySelectorAll('.inbox-action').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      if (act === 'delete') {
+        tasks = tasks.filter(t => t.id !== id);
+      } else {
+        const t = tasks.find(t => t.id === id);
+        if (t) t.type = act;
+      }
+      save(); render(); renderInboxModal();
+    });
+  });
+
+  setTimeout(() => { const el = document.getElementById('inboxTextInput'); if(el) el.focus(); }, 50);
+}
+
+load();
+render();
+</script>
+
+
+</body></html>
