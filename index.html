@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///Users/i-ting/Downloads/brain-dump_5.html -->
+<!-- saved from url=(0048)file:///Users/i-ting/Downloads/brain-dump_6.html -->
 <html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -776,7 +776,7 @@
 <body>
 
 <div class="header">
-  <div class="logo">腦袋清空器</div>
+  <div class="logo">腦袋清空器 <span id="dbStatus" style="font-size: 10px; margin-left: 8px; padding: 2px 6px; border-radius: 10px; background: rgb(232, 245, 233); color: rgb(46, 125, 50);">✅ 已同步</span></div>
   <div style="display:flex;align-items:center;gap:12px">
     <div class="stats" id="stats">
     <div class="stat-badge"><div class="stat-dot" style="background:var(--todo)"></div>1 要做</div>
@@ -855,7 +855,7 @@
           
           <span class="pri-badge pri-mid">🟡 中</span>
           <span class="dl-badge dl-ok">🗓 05/22 前</span>
-          <span class="task-time">29分前</span>
+          <span class="task-time">35分前</span>
         </div>
         
       </div>
@@ -1262,8 +1262,11 @@ try {
   window.firestoreDoc = docRef;
   window.dbReady = true;
 
+  const statusEl = document.getElementById('dbStatus');
+
   // Listen for real-time updates
   docRef.onSnapshot((doc) => {
+    if (statusEl) { statusEl.textContent = '✅ 已同步'; statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; }
     if (doc.exists) {
       const data = doc.data();
       if (data && data.tasks) {
@@ -1271,12 +1274,16 @@ try {
         render();
       }
     } else {
-      // First time - save empty
       docRef.set({ tasks: [] });
     }
+  }, (err) => {
+    if (statusEl) { statusEl.textContent = '❌ 連線失敗'; statusEl.style.background = '#fde8e8'; statusEl.style.color = '#c0392b'; }
+    console.error('Firestore error:', err);
   });
 
 } catch(e) {
+  const statusEl = document.getElementById('dbStatus');
+  if (statusEl) { statusEl.textContent = '❌ 離線模式'; statusEl.style.background = '#fde8e8'; statusEl.style.color = '#c0392b'; }
   console.log('Firebase not available, using localStorage', e);
   try { const r = localStorage.getItem(STORAGE_KEY); if (r) tasks = JSON.parse(r); } catch(e2) {}
   render();
