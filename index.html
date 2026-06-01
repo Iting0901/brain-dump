@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///Users/i-ting/Downloads/brain-dump_7.html -->
-<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>腦袋清空器</title>
 <style>
@@ -776,14 +776,10 @@
 <body>
 
 <div class="header">
-  <div class="logo">腦袋清空器 <span id="dbStatus" style="font-size: 10px; margin-left: 8px; padding: 2px 6px; border-radius: 10px; background: rgb(232, 245, 233); color: rgb(46, 125, 50);">✅ 已同步</span></div>
+  <div class="logo">腦袋清空器 <span id="dbStatus" style="font-size:10px;margin-left:8px;padding:2px 6px;border-radius:10px;background:#eee;color:#999">連線中...</span></div>
   <div style="display:flex;align-items:center;gap:12px">
-    <div class="stats" id="stats">
-    <div class="stat-badge"><div class="stat-dot" style="background:var(--todo)"></div>1 要做</div>
-    <div class="stat-badge"><div class="stat-dot" style="background:var(--waiting)"></div>0 等回</div>
-    <div class="stat-badge"><div class="stat-dot" style="background:var(--later)"></div>0 之後</div>
-  </div>
-    <button id="clearAllBtn" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;font-family:&#39;Space Mono&#39;,monospace;">清空</button>
+    <div class="stats" id="stats"></div>
+    <button id="clearAllBtn" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:5px;padding:4px 8px;cursor:pointer;font-family:'Space Mono',monospace;">清空</button>
   </div>
 </div>
 
@@ -808,7 +804,7 @@
     <span class="deadline-label">追蹤期限</span>
     <input class="deadline-input" id="deadlineInput" type="date">
   </div>
-  <div class="waiting-extra show" id="todoExtra">
+  <div class="waiting-extra" id="todoExtra">
     <span class="deadline-label" style="color:var(--todo)">截止日期</span>
     <input class="deadline-input" id="todoDeadlineInput" type="date" style="border-color:var(--todo)">
   </div>
@@ -824,8 +820,8 @@
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="all">全部 <span class="tab-count" id="count-all">1</span></div>
-  <div class="tab" data-tab="todo">我要做 <span class="tab-count" id="count-todo">1</span></div>
+  <div class="tab active" data-tab="all">全部 <span class="tab-count" id="count-all">0</span></div>
+  <div class="tab" data-tab="todo">我要做 <span class="tab-count" id="count-todo">0</span></div>
   <div class="tab" data-tab="waiting">等回覆 <span class="tab-count" id="count-waiting">0</span></div>
   <div class="tab" data-tab="later">之後 <span class="tab-count" id="count-later">0</span></div>
   <div class="tab" data-tab="done">完成 <span class="tab-count" id="count-done">0</span></div>
@@ -844,23 +840,7 @@
   <button class="inbox-quick-btn" id="openInboxBtn">開始整理 →</button>
 </div>
 
-<div class="task-list" id="taskList">
-    <div class="task-card    " data-type="todo">
-      <div class="task-check" onclick="toggleDone(&#39;mp0vzmh0q3b2&#39;)"></div>
-      <div class="task-body task-card-clickable" onclick="toggleExpand(&#39;mp0vzmh0q3b2&#39;)">
-        <div class="task-text">開六月份班表</div>
-        
-        <div class="task-meta">
-          <span class="task-type-badge">我要做</span>
-          
-          <span class="pri-badge pri-mid">🟡 中</span>
-          <span class="dl-badge dl-ok">🗓 05/22 前</span>
-          <span class="task-time">39分前</span>
-        </div>
-        
-      </div>
-      <button class="task-delete" onclick="deleteTask(&#39;mp0vzmh0q3b2&#39;)">×</button>
-    </div></div>
+<div class="task-list" id="taskList"></div>
 
 <div class="ritual-section">
   <div class="ritual-header" id="ritualHeader">
@@ -1269,11 +1249,40 @@ try {
     if (statusEl) { statusEl.textContent = '✅ 已同步'; statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; }
     if (doc.exists) {
       const data = doc.data();
-      if (data && data.tasks) {
+      if (data && data.tasks && data.tasks.length > 0) {
         tasks = data.tasks;
+        render();
+      } else if (data && data.tasks && data.tasks.length === 0) {
+        // Firestore is empty - check localStorage first before overwriting
+        try {
+          const local = localStorage.getItem(STORAGE_KEY);
+          if (local) {
+            const localTasks = JSON.parse(local);
+            if (localTasks && localTasks.length > 0) {
+              tasks = localTasks;
+              docRef.set({ tasks: tasks });
+              render();
+              return;
+            }
+          }
+        } catch(e) {}
+        tasks = [];
         render();
       }
     } else {
+      // Document doesn't exist - check localStorage first
+      try {
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+          const localTasks = JSON.parse(local);
+          if (localTasks && localTasks.length > 0) {
+            tasks = localTasks;
+            docRef.set({ tasks: tasks });
+            render();
+            return;
+          }
+        }
+      } catch(e) {}
       docRef.set({ tasks: [] });
     }
   }, (err) => {
@@ -1372,6 +1381,5 @@ function renderInboxModal() {
 load();
 render();
 </script>
-
-
-</body></html>
+</body>
+</html>
